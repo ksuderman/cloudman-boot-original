@@ -1,0 +1,37 @@
+---
+# Requires: ansible-galaxy collection install kubernetes
+# Note: community.kubernetes.helm is moving to kubernetes.core
+- hosts: controllers[0]
+  vars:
+    namespace: cattle-system
+  tasks:
+    - name: Install openshift
+      pip:
+        name: openshift
+    - name: Create the {{ namespace }} namespace.
+      k8s:
+        name: "{{ namespace }}"
+        kind: Namespace
+    - name: Install the helm repo
+      helm_repository:
+        name: rancher
+        repo_url: https://releases.rancher.com/server-charts/stable
+    - name: Install Rancher
+      helm:
+        name: rancher
+        namespace: "{{ namespace }}"
+        chart_ref: rancher/rancher
+        values:
+          hostname: rancher.{{ ansible_ssh_host }}.xip.io
+          ingress:
+            tls:
+              source: letsEncrypt
+          letsEncrypt:
+            email: admin@cloudve.org
+            environment: production
+            ingress:
+              class: nginx
+    - name:
+      debug:
+        msg: The Rancher dashboard should be available at https://rancher.{{ ansible_ssh_host }}.xip.io in a few minutes.
+

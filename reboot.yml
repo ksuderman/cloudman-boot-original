@@ -1,0 +1,12 @@
+---
+- hosts: controllers
+  become: true
+  tasks:
+    - name: Wait for the auto-update Ubuntu does on first boot.
+      shell: while fuser /var/lib/dpkg/{{ item }} >/dev/null 2>&1 ; do sleep 1 ; done
+      loop:
+        - lock
+        - lock.frontend
+    - name: Rebooting the server
+      reboot:
+
