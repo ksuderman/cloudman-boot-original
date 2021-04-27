@@ -2,12 +2,17 @@
 # Requires: ansible-galaxy collection install kubernetes
 # Note: community.kubernetes.helm is moving to kubernetes.core
 - hosts: controllers[0]
+  collections:
+    - kubernetes.core
   vars:
     namespace: cattle-system
+    hostname: rancher.{{ ansible_ssh_host }}.xip.io
+    email: admin@cloudve.org
   tasks:
     - name: Install openshift
       pip:
         name: openshift
+        state: present
     - name: Create the {{ namespace }} namespace.
       k8s:
         name: "{{ namespace }}"
@@ -22,16 +27,17 @@
         namespace: "{{ namespace }}"
         chart_ref: rancher/rancher
         values:
-          hostname: rancher.{{ ansible_ssh_host }}.xip.io
+          hostname: "{{ hostname }}"
           ingress:
             tls:
               source: letsEncrypt
           letsEncrypt:
-            email: admin@cloudve.org
+            email: "{{ email }}"
             environment: production
             ingress:
               class: nginx
+      tags: [ never, rancher ]
     - name:
       debug:
-        msg: The Rancher dashboard should be available at https://rancher.{{ ansible_ssh_host }}.xip.io in a few minutes.
+        msg: The Rancher dashboard should be available at https://{{ hostname }} in a few minutes.
 
